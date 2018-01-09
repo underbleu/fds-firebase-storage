@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Firebase Storage</title>
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+    <button class="btn-login">로그인</button>
+    <input type="file" class="file-input" multiple>
+
+<script src="https://www.gstatic.com/firebasejs/4.8.1/firebase.js"></script>
+<script>
+    // Initialize Firebase
+    var config = {
+        apiKey: "AIzaSyC18ADhYDhnHLrMa9-Jo3SjX3URN3lop8Y",
+        authDomain: "fds-firebase-storage-22421.firebaseapp.com",
+        databaseURL: "https://fds-firebase-storage-22421.firebaseio.com",
+        projectId: "fds-firebase-storage-22421",
+        storageBucket: "fds-firebase-storage-22421.appspot.com",
+        messagingSenderId: "1032919680563"
+    };
+    firebase.initializeApp(config);
+</script>
+<script src="./common.js"></script>
+</body>
+</html>
