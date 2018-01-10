@@ -4,7 +4,13 @@ const storage = firebase.storage();
 const database = firebase.database();
 const loginButtonEl = document.querySelector('.btn-login');
 const fileInputEl = document.querySelector('.file-input');
-// const imageListEl = document.querySelector('.image-list');
+const imageListEl = document.querySelector('.image-list');
+const IMAGE_PER_PAGE = 2;
+
+let nextKey; //재사용을 위해 전역에 선언
+let prevKey;
+let keyArr = [prevKey, nextKey];
+let realKey;
 
 // 로그인이 되었을때 사용자 데이터 가져오기
 auth.onAuthStateChanged(function (user) { //위의 provider 인증인스턴스 생성된 후 동작됨.
@@ -18,11 +24,10 @@ auth.onAuthStateChanged(function (user) { //위의 provider 인증인스턴스 �
 loginButtonEl.addEventListener('click', async e => { 
     // result : 로그인정보를 담은 객체(token, username, email...)
     const result = await auth.signInWithPopup(provider);
-    // console.log(result);
 })
 
 fileInputEl.addEventListener('change', async e => { //change 이벤트: 요소의 값이 변경될 때 발생
-    // console.log(fileInputEl.files); // .files : 파일리스트를 보여주는 HTMLInputElement의 속성
+    console.log(fileInputEl.files); // .files : 파일리스트를 보여주는 HTMLInputElement의 속성
 
     for(let i = 0; i < fileInputEl.files.length; i++){
 
@@ -31,7 +36,7 @@ fileInputEl.addEventListener('change', async e => { //change 이벤트: 요소�
         const snapshot = await storage.ref(refStr).put(fileInputEl.files[i]); //snapshot:올라간파일정보 | .ref() : represents a specific location in your Database. 읽고/쓸수 있음
         const imageEl = document.createElement('img');
         imageEl.src = snapshot.downloadURL;
-        document.body.appendChild(imageEl);
+        imageListEl.appendChild(imageEl);
         // console.log(snapshot);
 
         // 2. DB저장
@@ -39,34 +44,55 @@ fileInputEl.addEventListener('change', async e => { //change 이벤트: 요소�
             downloadURL: snapshot.downloadURL,
             filename: fileInputEl.files[i].name
         })
-
+        refreshImages();
     }
 })
 
 async function refreshImages(){
 
     // 1. 실시간 데이터베이스에서 이미지 정보가져오기
-    const snapshot = await database.ref(`/images`).once('value');
+    const snapshot = await database // snapshot: 올라가있는 파일들 정보
+        .ref(`/images`)
+        .orderByKey()
+        .limitToFirst(IMAGE_PER_PAGE + 1)
+        .startAt(realKey || "") // nextKey가 없을 때 빈문자열을 넣어주는 방어코드.
+        .once('value');
     const imageObj = snapshot.val();
-    // console.log(imageObj);
+    const keys = Object.keys(imageObj);
+    nextKey = keys[keys.length - 1];
+    prevKey = nextKey - IMAGE_PER_PAGE;
 
     // 2. 각 이미지를 화면에 띄워주기 
-    // imageListEl.innerHTML = "";
-    if (imageObj != null) { //Null-check로 데이터 없을 경우 대비. 안해주면에서 Object.values(null) -> TypeError: Cannot convert undefined or null to object
-        for(let img of Object.values(imageObj)){
+    imageListEl.innerHTML = "";
+    if (imageObj != null) { //Null-check : 데이터 없을 경우 안해주면 에러 Object.values(null) -> TypeError: Cannot convert undefined or null to object
+        const imageArr = Object.values(imageObj).slice(0, IMAGE_PER_PAGE);
+        for(let {downloadURL, filename} of imageArr){ //객체분해대입
             const imageBox = document.createElement('div');
+
             const imageEl = document.createElement('img');
+            imageEl.src = downloadURL;
+            
             const imageName = document.createElement('a');
-            imageEl.src = img.downloadURL;
-            imageName.innerHTML = img.filename;
-            imageName.href = img.downloadURL;
+            imageName.innerHTML = filename;
+            imageName.href = downloadURL;
     
-            document.body.appendChild(imageBox);
+            imageListEl.appendChild(imageBox);
             imageBox.appendChild(imageEl);
             imageBox.appendChild(imageName);
         }
     } 
 }
 
+// 이전페이지 버튼
+document.querySelector('.prev-button').addEventListener('click', async e => {
+    console.log('prev');
+    realKey = keyArr[0];
+    refreshImages();
+})
 
-
+// 다음페이지 버튼
+document.querySelector('.next-button').addEventListener('click', async e => {
+    console.log('next');
+    realKey = keyArr[1];
+    refreshImages();
+})
