@@ -7,10 +7,7 @@ const fileInputEl = document.querySelector('.file-input');
 const imageListEl = document.querySelector('.image-list');
 const IMAGE_PER_PAGE = 2;
 
-let nextKey; //재사용을 위해 전역에 선언
-let prevKey;
-let keyArr = [prevKey, nextKey];
-let realKey;
+const keyStack = [];
 
 // 로그인이 되었을때 사용자 데이터 가져오기
 auth.onAuthStateChanged(function (user) { //위의 provider 인증인스턴스 생성된 후 동작됨.
@@ -55,12 +52,11 @@ async function refreshImages(){
         .ref(`/images`)
         .orderByKey()
         .limitToFirst(IMAGE_PER_PAGE + 1)
-        .startAt(realKey || "") // nextKey가 없을 때 빈문자열을 넣어주는 방어코드.
+        .startAt(keyStack[keyStack.length - 1] || "") // nextKey가 없을 때 빈문자열을 넣어주는 방어코드.
         .once('value');
     const imageObj = snapshot.val();
     const keys = Object.keys(imageObj);
-    nextKey = keys[keys.length - 1];
-    prevKey = nextKey - IMAGE_PER_PAGE;
+    keyStack.push(keys[keys.length - 1]);
 
     // 2. 각 이미지를 화면에 띄워주기 
     imageListEl.innerHTML = "";
@@ -85,14 +81,12 @@ async function refreshImages(){
 
 // 이전페이지 버튼
 document.querySelector('.prev-button').addEventListener('click', async e => {
-    console.log('prev');
-    realKey = keyArr[0];
+    keyStack.pop(); // nextKey out!
+    keyStack.pop(); // currentKey out!
     refreshImages();
 })
 
 // 다음페이지 버튼
 document.querySelector('.next-button').addEventListener('click', async e => {
-    console.log('next');
-    realKey = keyArr[1];
     refreshImages();
 })
