@@ -1,0 +1,12 @@
+img{
+    width: 300px;
+}
+div{
+    float: left;
+    width: 300px;
+    overflow: hidden;
+}
+a{
+    display: block;
+    text-align: center;
+}
